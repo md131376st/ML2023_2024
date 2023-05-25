@@ -20,7 +20,7 @@ class PCA:
         self.CenterData()
         self.ConversionMatrix()
         self.Eigenvectors()
-        # self.PlotFunction()
+        self.PlotFunction()
 
     def LoadData(self):
         self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +40,11 @@ class PCA:
 
     def Eigenvectors(self):
         self.egin_vector, s, vh = np.linalg.svd(self.conversion)
+        sumAllEgineVectors= sum(sum(self.egin_vector))
         self.egin_vector = self.egin_vector[:, 0:self.m]
+        sumSelectedEginVector= sum(sum (self.egin_vector))
+        print("preserve Data Perservation wih " +str(self.m) +" : "+
+              str((sumSelectedEginVector/sumAllEgineVectors)*100))
         self.projection_list = np.dot(self.egin_vector.T, self.data)
 
     def PlotFunction(self):
@@ -57,13 +61,13 @@ class PCA:
         pylab.show()
 
 
-# pca = PCA(11)
+pca = PCA(11)
 pca1 = PCA(10)
-# pca2 = PCA(9)
-# pca3 = PCA(8)
-# pca4 = PCA(7)
-# pca5 = PCA(6)
-# pca6 = PCA(5)
+pca2 = PCA(9)
+pca3 = PCA(8)
+pca4 = PCA(7)
+pca5 = PCA(6)
+pca6 = PCA(5)
 pca7 = PCA(4)
-# pca8 = PCA(3)
-# pca9 = PCA(2)
+pca8 = PCA(3)
+pca9 = PCA(2)
