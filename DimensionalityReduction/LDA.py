@@ -20,16 +20,29 @@ class LDA:
         self.CalculateClassMean()
         self.CalculateSb()
         self.CalculateSW()
-        self.CalculeteEginValue()
+        self.CalculeteEginValueJoinSB()
+        # self.CalculeteEginValue()
         self.PlotFunction()
 
         pass
 
     def CalculeteEginValue(self):
+        # Generalized eigen value problem
         s, U = scipy.linalg.eigh(self.sb, self.sw)
         W = U[:, ::-1][:, 0:self.m]
+        # find base value
         UW, _, _ = np.linalg.svd(W)
         self.eginVector = UW[:, 0:self.m]
+
+    def CalculeteEginValueJoinSB(self):
+        # Generalized eigen value problem
+        U, s, _ = np.linalg.svd(self.sw)
+        p1 = np.dot(np.dot(U, np.diag(1.0 / (s ** 0.5))), U.T)
+        sbt = np.dot(np.dot(p1, self.sb), p1.T)
+        s, P2 = np.linalg.eigh(sbt)
+        P2= P2[:, ::-1][:, 0:self.m]
+
+        self.eginVector = np.dot(p1.T,P2 )
 
     def PlotFunction(self):
         projection_list = np.dot(self.eginVector.T, self.data)
@@ -75,7 +88,11 @@ class LDA:
     def VectorCol(self, data):
         return data.reshape((data.size, 1))
 
+    def VectorRow(self, data):
+        return data.reshape((1, data.size))
+
     def CalculateMean(self, data):
         return data.mean(1)
 
-lda = LDA(5)
+
+lda = LDA(2)

@@ -40,9 +40,9 @@ class PCA:
 
     def Eigenvectors(self):
         self.egin_vector, s, vh = np.linalg.svd(self.conversion)
-        sumAllEgineVectors= sum(sum(self.egin_vector))
+        sumAllEgineVectors= sum(sum(abs(self.egin_vector)))
         self.egin_vector = self.egin_vector[:, 0:self.m]
-        sumSelectedEginVector= sum(sum (self.egin_vector))
+        sumSelectedEginVector= sum(sum (abs(self.egin_vector)))
         print("preserve Data Perservation wih " +str(self.m) +" : "+
               str((sumSelectedEginVector/sumAllEgineVectors)*100))
         self.projection_list = np.dot(self.egin_vector.T, self.data)
@@ -58,16 +58,10 @@ class PCA:
         pylab.xlabel('Principal component 1')
         pylab.ylabel('Principal component 2')
         pylab.legend(['men', 'women', "allData"])
-        pylab.show()
+        pylab.savefig("pca8.png")
 
-
-pca = PCA(11)
-pca1 = PCA(10)
-pca2 = PCA(9)
+# pca = PCA(11)
+# pca1 = PCA(10)
+# pca2 = PCA(9)
 pca3 = PCA(8)
-pca4 = PCA(7)
-pca5 = PCA(6)
-pca6 = PCA(5)
-pca7 = PCA(4)
-pca8 = PCA(3)
-pca9 = PCA(2)
+
