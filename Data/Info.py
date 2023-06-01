@@ -69,8 +69,8 @@ class KFold:
 
         # self.data = np.hstack((PCA(6).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
         self.size = int((self.data.shape[0]) / 2)
-        self.wemonData = self.data[self.size:, :]
-        self.MenData = self.data[:self.size, :]
+        self.wemonData = self.data[self.size:,:]
+        self.MenData = self.data[:self.size,:]
         self.foldsize = int(self.size / self.k)
         for i in range(self.k):
             self.foldList.append(np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), :],

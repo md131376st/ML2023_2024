@@ -26,7 +26,7 @@ class MGC(AlgorithmBasic):
         for i in range(self.info.testData.shape[1]):
             xt = self.info.testData[:, i:i + 1]
             score = np.zeros(shape=(self.classTypes, 1))
-            for j in set(self.info.testlable):
+            for j in range(len( set(self.info.testlable))):
                 mu = self.mu_classes[int(j)]
                 c = self.cov_classes[int(j)]
                 score[int(j), :] = np.exp(self.logpdf_GAU_ND_1sample(xt, mu, c))
@@ -54,7 +54,7 @@ class MGC(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    KFold = KFold(6)
+    KFold = KFold(3)
     for i in range(KFold.k):
         MGC_ = MGC(KFold.infoSet[i])
         MGC_.applyTest()
