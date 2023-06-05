@@ -69,6 +69,7 @@ class KFold:
                                   delimiter=",")
 
         # self.data = np.hstack((PCA(4).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
+
         self.size = int((self.data.shape[0]) / 2)
         self.wemonData = self.data[self.size:, :]
         self.MenData = self.data[:self.size, :]

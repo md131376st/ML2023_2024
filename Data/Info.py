@@ -68,13 +68,23 @@ class KFold:
                                   delimiter=",")
 
         # self.data = np.hstack((PCA(6).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
-        self.size = int((self.data.shape[0]) / 2)
-        self.wemonData = self.data[self.size:,:]
-        self.MenData = self.data[:self.size,:]
-        self.foldsize = int(self.size / self.k)
+        for i in range(int(self.data.shape[0])):
+            if self.data[i,-1] == 0:
+                #self.wemonData = self.data[i:,:]
+            #else:
+                #self.MenData = self.data[:i,:]
+                self.size = int(i+1)
+        #print(self.size)
+
+        #self.size = int((self.data.shape[0]) / 2)
+        self.wemonData = self.data[self.size:,:] #index:self.size-2400
+        self.MenData = self.data[:self.size,:] #index:0-self.size
+        self.manfoldsize = int(self.size / self.k)
+        self.womenfoldsize = int((int(self.data.shape[0])-self.size) / self.k)
+
         for i in range(self.k):
-            self.foldList.append(np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), :],
-                                                 self.wemonData[i * self.foldsize:self.foldsize * (i + 1), :])))
+            self.foldList.append(np.concatenate((self.MenData[i * self.manfoldsize:self.manfoldsize * (i + 1), :],
+                                                 self.wemonData[i * self.womenfoldsize:self.womenfoldsize * (i + 1), :])))
             # lables = np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), -1],
             #                          self.wemonData[i * self.foldsize:self.foldsize * (i + 1), -1]))
 
