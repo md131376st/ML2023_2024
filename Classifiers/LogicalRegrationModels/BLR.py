@@ -68,10 +68,10 @@ class BLR(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    errorRate=[]
-    lambdaList = [10 ** -6, 10 ** -3, 10 ** -1, 1, 10]
+    errorRate = []
+    lambdaList = [10 ** -6, 10 ** -3, 10 ** -1, 0, 1, 10]
     for j in range(len(lambdaList)):
-        KFold_ = KFold(10)
+        KFold_ = KFold(10, pca=9)
         for i in range(KFold_.k):
             # print("fold Number:" + str(i))
             logRegObj = BLR(KFold_.infoSet[i], lambdaList[j])

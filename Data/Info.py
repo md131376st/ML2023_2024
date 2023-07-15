@@ -41,13 +41,15 @@ class Info:
 
 
 class KFold:
-    def __init__(self, k, prior=0.5, cfn=1, cfp=1):
+    def __init__(self, k, prior=0.5, cfn=1, cfp=1, pca=0):
         self.k = k
         self.foldList = []
+        self.pca = pca
         self.LoadData()
         self.infoSet = []
         self.lables = []
         self.GenerateInfoDataWithTest()
+
 
         self.scoreList = []
         self.realScore = []
@@ -66,13 +68,15 @@ class KFold:
         self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
                                   + "/Train.txt",
                                   delimiter=",")
-
-        # self.data = np.hstack((PCA(6).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
+        if self.pca != 0:
+            self.data = np.hstack((PCA(self.pca).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
         self.size = int((self.data.shape[0]) / 2)
-        self.wemonData = self.data[self.size:,:]
-        self.MenData = self.data[:self.size,:]
+        self.wemonData = self.data[self.size:, :]
+        self.MenData = self.data[:self.size, :]
         self.foldsize = int(self.size / self.k)
         for i in range(self.k):
+            hi = self.MenData[i * self.foldsize:self.foldsize * (i + 1), :]
+            hi1 = self.wemonData[i * self.foldsize:self.foldsize * (i + 1), :]
             self.foldList.append(np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), :],
                                                  self.wemonData[i * self.foldsize:self.foldsize * (i + 1), :])))
             # lables = np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), -1],

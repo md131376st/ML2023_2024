@@ -60,8 +60,5 @@ class PCA:
         pylab.legend(['men', 'women', "allData"])
         pylab.savefig("pca8.png")
 
-# pca = PCA(11)
-# pca1 = PCA(10)
-# pca2 = PCA(9)
-pca3 = PCA(8)
+
 
