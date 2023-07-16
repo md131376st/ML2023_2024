@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from DimensionalityReduction.PCA import PCA
+import pandas as pd
+from functools import reduce
 import scipy.stats
 
 
@@ -35,6 +37,7 @@ class Info:
         self.err = 1 - self.Accoracy
 
     def ValidatClassfier(self, sum_correct_assign, classfierName):
+
         self.CheckAccuracy(sum_correct_assign)
         self.CalculateErrorRate()
         print(classfierName + ':  Error rate %f%%' % (self.err * 100))
@@ -50,7 +53,6 @@ class KFold:
         self.lables = []
         self.GenerateInfoDataWithTest()
 
-
         self.scoreList = []
         self.realScore = []
         self.allFoldLabels = []
@@ -62,32 +64,38 @@ class KFold:
         self.pi = prior
         self.cfn = cfn
         self.cfp = cfp
+        self.LLR = np.array([])
         pass
 
     def LoadData(self):
         self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
                                   + "/Train.txt",
                                   delimiter=",")
+        # Data has been shuffled before splitting, so
+        # that the data of different folds are homogeneous
+        dataPandas = pd.DataFrame(self.data)
+        dataPandas = dataPandas.sample(
+            frac=1,
+            random_state=100,
+        ).reset_index(drop=True)
+        self.data = dataPandas.to_numpy()
         if self.pca != 0:
-            self.data = np.hstack((PCA(self.pca).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
-        self.size = int((self.data.shape[0]) / 2)
-        self.wemonData = self.data[self.size:, :]
-        self.MenData = self.data[:self.size, :]
-        self.foldsize = int(self.size / self.k)
+            self.data = np.hstack(
+                (PCA(self.pca, self.data).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
+        # self.size = int((self.data.shape[0]) / 2)
+        # self.wemonData = self.data[self.size:, :]
+        # self.MenData = self.data[:self.size, :]
+        self.foldsize = int(self.data.shape[0] / self.k)
         for i in range(self.k):
-            hi = self.MenData[i * self.foldsize:self.foldsize * (i + 1), :]
-            hi1 = self.wemonData[i * self.foldsize:self.foldsize * (i + 1), :]
-            self.foldList.append(np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), :],
-                                                 self.wemonData[i * self.foldsize:self.foldsize * (i + 1), :])))
+            self.foldList.append(self.data[i * self.foldsize:self.foldsize * (i + 1), :])
             # lables = np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), -1],
             #                          self.wemonData[i * self.foldsize:self.foldsize * (i + 1), -1]))
-
+            #
             # self.allFoldLabels = np.concatenate((self.allFoldLabels, lables))
             pass
 
     def GenerateInfoDataWithTest(self):
         for i in range(self.k):
-
             test = self.foldList[i]
             self.lables = np.concatenate((self.lables, test[:, -1].T))
             data = np.zeros(shape=(0, self.data.shape[1]))
@@ -100,22 +108,49 @@ class KFold:
     def addscoreList(self, scores):
         self.scoreList = np.concatenate((self.scoreList, scores))
 
+    def addLLR(self, LLR):
+        self.LLR = np.append(self.LLR, LLR)
+
     def addRealScore(self, scores):
         self.realScore = np.concatenate((self.realScore, scores))
+
+    def binaryOptimalBayesDecision(self, threshold=None):
+        self.LLR.flatten()
+        if threshold == None:
+            threshold = -1 * np.log((self.pi * self.cfn) / ((1 - self.pi) * self.cfp))
+        score = [1 if self.LLR[i] >
+                      threshold else 0 for i in range(self.LLR.size)]
+        return np.array(score)
 
     def CheckAccuracy(self):
         self.Accoracy = sum(self.scoreList) / len(self.lables)
 
-    def ValidatClassfier(self, classfierName):
+    def ValidatClassfier(self, classfierName, threshold=None):
+        if threshold:
+            self.scoreList = self.lables == self.binaryOptimalBayesDecision(None)
         self.CheckAccuracy()
         self.CalculateErrorRate()
+        self.binaryBayesRisk()
+        print(classfierName + ':  Error rate %f%%  ' % (
+                self.err * 100) + 'DCF ' + str(self.DCF) + ' normal DCF ' + str(self.normalDCF))
+        minDFC = self.binaryMinDCF()
+        print("Min normalize DCF " + str(minDFC))
+
+    def binaryBayesRisk(self):
         self.CalculateConfusionMatrices()
         self.CalculateFNR()
         self.CalculateFPR()
         self.CalculateDCF()
         self.compute_normalized_DCF()
-        print(classfierName + ':  Error rate %f%%  ' % (
-                self.err * 100) + 'DCF ' + str(self.DCF) + ' normal DCF ' + str(self.normalDCF))
+
+    def binaryMinDCF(self):
+        normalizeDCFs = []
+        for i in self.LLR:
+            self.scoreList = self.binaryOptimalBayesDecision(i)
+            self.binaryBayesRisk()
+            normalizeDCFs.append(self.normalDCF)
+        min_normalizeDCF = reduce(lambda a, b: min(a, b), normalizeDCFs)
+        return min_normalizeDCF
 
     def CalculateErrorRate(self):
         self.err = 1 - self.Accoracy
@@ -149,5 +184,4 @@ class KFold:
         self.DCF = self.pi * self.cfn * self.FNR + (1 - self.pi) * self.cfp * self.FPR
         pass
 
-
-hi = Info()
+    # def compute_min_DCF(self):

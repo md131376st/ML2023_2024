@@ -16,9 +16,11 @@ class TCG(MGC):
 
 
 if __name__ == "__main__":
-    KFold = KFold(10)
+    KFold = KFold(10,prior= 0.5,pca=8)
     for i in range(KFold.k):
         TCG_ = TCG(KFold.infoSet[i])
         TCG_.applyTest()
         KFold.addscoreList(TCG_.checkAcc())
-    KFold.ValidatClassfier("TCG")
+        KFold.addLLR(TCG_.foldLLR)
+    KFold.ValidatClassfier("TCG", 1)
+

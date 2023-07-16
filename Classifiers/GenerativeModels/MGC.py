@@ -6,8 +6,8 @@ from Data.Info import KFold
 
 
 class MGC(AlgorithmBasic):
-    def __init__(self, info=None):
-        super().__init__(info)
+    def __init__(self, info=None, prior=1 / 2):
+        super().__init__(info, prior)
 
         self.classTypes = len(set(self.info.testlable))
         self.mu_classes = []  # list of empirical mean for each class
@@ -26,23 +26,29 @@ class MGC(AlgorithmBasic):
         for i in range(self.info.testData.shape[1]):
             xt = self.info.testData[:, i:i + 1]
             score = np.zeros(shape=(self.classTypes, 1))
-            for j in range(len( set(self.info.testlable))):
+            for j in range(len(set(self.info.testlable))):
                 mu = self.mu_classes[int(j)]
                 c = self.cov_classes[int(j)]
                 score[int(j), :] = np.exp(self.logpdf_GAU_ND_1sample(xt, mu, c))
             self.score[:, i:i + 1] = score
         # we assume are prior probability is 1/2
-        self.Sjoin = 1 / 2 * self.score
-        self.logSJoint = np.log(self.Sjoin) + np.log(1 / 2)
+        self.Sjoin = self.prior * self.score
+        self.logSJoint = np.log(self.score) + np.log(self.prior)
         self.logSMarginal = ss.logsumexp(self.logSJoint, axis=0).reshape(1, -1)
         log_SPost = self.logSJoint - self.logSMarginal
         self.SPost = np.exp(log_SPost)
+        self.Destination()
         pass
 
     def checkAcc(self):
         predicted_labels = np.argmax(self.SPost, axis=0)
         return self.info.testlable == predicted_labels
         pass
+
+    def Destination(self):
+        self.foldLLR = np.zeros(self.info.testData.shape[1])
+        for j in range(self.info.testData.shape[1]):
+            self.foldLLR[j] = self.score[1][j] - self.score[0][j]
 
     def logpdf_GAU_ND_1sample(self, x, mu, C):
         M = x.shape[0]  # num of features of sample x
@@ -54,9 +60,29 @@ class MGC(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    KFold = KFold(3)
+    KFold = KFold(10,prior= 0.5,pca=0)
     for i in range(KFold.k):
-        MGC_ = MGC(KFold.infoSet[i])
+        MGC_ = MGC(KFold.infoSet[i], KFold.pi)
         MGC_.applyTest()
+        hi = MGC_.checkAcc()
         KFold.addscoreList(MGC_.checkAcc())
-    KFold.ValidatClassfier("MGC")
+        KFold.addLLR(MGC_.foldLLR)
+    KFold.ValidatClassfier("MGC",1)
+
+    # KFold = KFold(10,prior= 0.9,pca=11)
+    # for i in range(KFold.k):
+    #     MGC_ = MGC(KFold.infoSet[i], KFold.pi)
+    #     MGC_.applyTest()
+    #     hi = MGC_.checkAcc()
+    #     KFold.addscoreList(MGC_.checkAcc())
+    #     KFold.addLLR(MGC_.foldLLR)
+    # KFold.ValidatClassfier("MGC",1)
+
+    # KFold = KFold(10,prior= 0.1,pca=8)
+    # for i in range(KFold.k):
+    #     MGC_ = MGC(KFold.infoSet[i], KFold.pi)
+    #     MGC_.applyTest()
+    #     hi = MGC_.checkAcc()
+    #     KFold.addscoreList(MGC_.checkAcc())
+    #     KFold.addLLR(MGC_.foldLLR)
+    # KFold.ValidatClassfier("MGC",1)
