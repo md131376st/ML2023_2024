@@ -82,16 +82,9 @@ class KFold:
         if self.pca != 0:
             self.data = np.hstack(
                 (PCA(self.pca, self.data).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
-        # self.size = int((self.data.shape[0]) / 2)
-        # self.wemonData = self.data[self.size:, :]
-        # self.MenData = self.data[:self.size, :]
         self.foldsize = int(self.data.shape[0] / self.k)
         for i in range(self.k):
             self.foldList.append(self.data[i * self.foldsize:self.foldsize * (i + 1), :])
-            # lables = np.concatenate((self.MenData[i * self.foldsize:self.foldsize * (i + 1), -1],
-            #                          self.wemonData[i * self.foldsize:self.foldsize * (i + 1), -1]))
-            #
-            # self.allFoldLabels = np.concatenate((self.allFoldLabels, lables))
             pass
 
     def GenerateInfoDataWithTest(self):
@@ -127,7 +120,8 @@ class KFold:
 
     def ValidatClassfier(self, classfierName, threshold=None):
         if threshold:
-            self.scoreList = self.lables == self.binaryOptimalBayesDecision(None)
+            self.realScore = self.binaryOptimalBayesDecision(None)
+            self.scoreList = (self.lables == self.binaryOptimalBayesDecision(None))
         self.CheckAccuracy()
         self.CalculateErrorRate()
         self.binaryBayesRisk()
@@ -146,9 +140,11 @@ class KFold:
     def binaryMinDCF(self):
         normalizeDCFs = []
         for i in self.LLR:
-            self.scoreList = self.binaryOptimalBayesDecision(i)
+            self.realScore = self.binaryOptimalBayesDecision(i)
+            self.scoreList = (self.lables == self.binaryOptimalBayesDecision(i))
             self.binaryBayesRisk()
             normalizeDCFs.append(self.normalDCF)
+        # print(normalizeDCFs)
         min_normalizeDCF = reduce(lambda a, b: min(a, b), normalizeDCFs)
         return min_normalizeDCF
 
@@ -157,7 +153,6 @@ class KFold:
 
     def CalculateConfusionMatrices(self):
         i = 0
-
         for correctPredication in self.scoreList:
             actual_label = int(self.lables[i])
             correctPredication = int(correctPredication)  # class 0,1

@@ -71,11 +71,12 @@ if __name__ == "__main__":
     errorRate = []
     lambdaList = [10 ** -6, 10 ** -3, 10 ** -1, 0, 1, 10]
     for j in range(len(lambdaList)):
-        KFold_ = KFold(10, pca=9)
+        KFold_ =  KFold(10, prior=0.3, pca=0)
         for i in range(KFold_.k):
             # print("fold Number:" + str(i))
             logRegObj = BLR(KFold_.infoSet[i], lambdaList[j])
             logRegObj.applyTest()
             KFold_.addscoreList(logRegObj.checkAcc())
+            KFold.addLLR(logRegObj.foldLLR)
         KFold_.ValidatClassfier("BLR with lambda=" + str(lambdaList[j]) + '')
         errorRate.append(KFold_.err)

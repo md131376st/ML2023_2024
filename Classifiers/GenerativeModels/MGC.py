@@ -29,13 +29,13 @@ class MGC(AlgorithmBasic):
             for j in range(len(set(self.info.testlable))):
                 mu = self.mu_classes[int(j)]
                 c = self.cov_classes[int(j)]
-                score[int(j), :] = np.exp(self.logpdf_GAU_ND_1sample(xt, mu, c))
+                score[int(j), :] = self.logpdf_GAU_ND_1sample(xt, mu, c) + np.log(self.prior)
             self.score[:, i:i + 1] = score
         # we assume are prior probability is 1/2
-        self.Sjoin = self.prior * self.score
-        self.logSJoint = np.log(self.score) + np.log(self.prior)
-        self.logSMarginal = ss.logsumexp(self.logSJoint, axis=0).reshape(1, -1)
-        log_SPost = self.logSJoint - self.logSMarginal
+        # self.Sjoin = self.prior * self.score
+        # self.logSJoint = np.log(self.score) + np.log(self.prior)
+        self.logSMarginal = ss.logsumexp(self.score, axis=0).reshape(1, -1)
+        log_SPost = self.score - self.logSMarginal
         self.SPost = np.exp(log_SPost)
         self.Destination()
         pass
@@ -48,7 +48,7 @@ class MGC(AlgorithmBasic):
     def Destination(self):
         self.foldLLR = np.zeros(self.info.testData.shape[1])
         for j in range(self.info.testData.shape[1]):
-            self.foldLLR[j] = self.score[1][j] - self.score[0][j]
+            self.foldLLR[j] = self.SPost[1][j] - self.SPost[0][j]
 
     def logpdf_GAU_ND_1sample(self, x, mu, C):
         M = x.shape[0]  # num of features of sample x
@@ -60,14 +60,14 @@ class MGC(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    KFold = KFold(10,prior= 0.5,pca=0)
+    KFold = KFold(10, prior=0.3, pca=0)
     for i in range(KFold.k):
         MGC_ = MGC(KFold.infoSet[i], KFold.pi)
         MGC_.applyTest()
         hi = MGC_.checkAcc()
         KFold.addscoreList(MGC_.checkAcc())
         KFold.addLLR(MGC_.foldLLR)
-    KFold.ValidatClassfier("MGC",1)
+    KFold.ValidatClassfier("MGC", 1)
 
     # KFold = KFold(10,prior= 0.9,pca=11)
     # for i in range(KFold.k):
