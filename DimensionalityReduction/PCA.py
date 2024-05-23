@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from matplotlib import pylab
+import matplotlib.pyplot as plt
 from DimensionalityReduction.Utility import VectorCol
 
 
@@ -13,7 +13,7 @@ class PCA:
         self.egin_vector = []
         self.mean = 0
         self.conversion = 0
-        if data.any():
+        if data!=None:
             self.label = data[:, -1].T
             self.data = data[:, :-1].T
         else:
@@ -24,13 +24,12 @@ class PCA:
         self.CenterData()
         self.ConversionMatrix()
         self.Eigenvectors()
-        self.PlotFunction()
+        # self.PlotFunction()
 
     def LoadData(self):
-        self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
-                                  + "/Train.txt",
-                                  delimiter=",")
-        self.data = np.random.rand(self.data.shape[0]).argsort()
+        self.data = np.genfromtxt( "./Train.txt",delimiter=",")
+        print(self.data.shape)
+        # self.data = np.random.rand(self.data.shape[0]).argsort()
         self.label = self.data[:, -1].T
         self.data = self.data[:, :-1].T
 
@@ -53,14 +52,17 @@ class PCA:
         self.projection_list = np.dot(self.egin_vector.T, self.data)
 
     def PlotFunction(self):
-        # self.projection_list = np.dot(self.egin_vector.T, self.data)
-        men = self.projection_list[:, self.label == 0]
-        women = self.projection_list[:, self.label == 1]
+        fake = self.projection_list[:, self.label == 0]
+        genuine = self.projection_list[:, self.label == 1]
+        for i in range(6):
+            plt.figure(figsize=(8, 6))
+            plt.hist(fake[i,:], bins=30, alpha=0.5, label=f'fake')
+            plt.hist(genuine[i,:], bins=30, alpha=0.5, label=f'genuine')
+            plt.title(f'Histogram of PCA Component {i + 1}')
+            plt.xlabel('Projected Feature Value')
+            plt.ylabel('Frequency')
+            plt.legend()
+            plt.savefig("pca_" + str(i+1) + ".png")
 
-        pylab.scatter(men[0, :], men[1, :])
-        pylab.scatter(women[0, :], women[1, :])
-        # pylab.scatter(projection_list[0],projection_list[1])
-        pylab.xlabel('Principal component 1')
-        pylab.ylabel('Principal component 2')
-        pylab.legend(['men', 'women', "allData"])
-        pylab.savefig("pca8.png")
+
+pca = PCA(m=6)
