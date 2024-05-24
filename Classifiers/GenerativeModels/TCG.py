@@ -16,11 +16,13 @@ class TCG(MGC):
 
 
 if __name__ == "__main__":
-    KFold = KFold(10,prior= 0.5,pca=8)
-    for i in range(KFold.k):
-        TCG_ = TCG(KFold.infoSet[i])
+    pca_list = [2, 3, 4, 5]
+    for pca in pca_list:
+        KFold_ = KFold(5, prior=0.5, pca=pca)
+    # for i in range(KFold.k):
+        TCG_ = TCG(KFold_.infoSet[0])
         TCG_.applyTest()
-        KFold.addscoreList(TCG_.checkAcc())
-        KFold.addLLR(TCG_.foldLLR)
-    KFold.ValidatClassfier("TCG", 1)
+        KFold_.addscoreList(TCG_.checkAcc())
+        KFold_.addLLR(TCG_.foldLLR)
+        KFold_.ValidatClassfier("tied Gaussian", fold_number=0)
 

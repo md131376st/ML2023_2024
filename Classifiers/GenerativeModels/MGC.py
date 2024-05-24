@@ -60,14 +60,16 @@ class MGC(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    KFold = KFold(10, prior=0.3, pca=0)
-    for i in range(KFold.k):
-        MGC_ = MGC(KFold.infoSet[i], KFold.pi)
+    pca_list = [2, 3, 4, 5]
+    for pca in pca_list:
+        KFold_ = KFold(5, prior=0.5, pca=pca)
+        # for i in range(KFold.k):
+        MGC_ = MGC(KFold_.infoSet[0], KFold_.pi)
         MGC_.applyTest()
-        hi = MGC_.checkAcc()
-        KFold.addscoreList(MGC_.checkAcc())
-        KFold.addLLR(MGC_.foldLLR)
-    KFold.ValidatClassfier("MGC", 1)
+        KFold_.addscoreList(MGC_.checkAcc())
+        KFold_.addLLR(MGC_.foldLLR)
+        KFold_.ValidatClassfier("MVG", fold_number=0)
+
 
     # KFold = KFold(10,prior= 0.9,pca=11)
     # for i in range(KFold.k):

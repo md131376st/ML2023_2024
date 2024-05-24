@@ -44,11 +44,11 @@ class Info:
 
 
 class KFold:
-    def __init__(self, k, prior=0.5, cfn=1, cfp=1, pca=0):
+    def __init__(self, k, prior=0.5, cfn=1, cfp=1, pca=0, slice=None, start=None):
         self.k = k
         self.foldList = []
         self.pca = pca
-        self.LoadData()
+        self.LoadData(slice, start)
         self.infoSet = []
         self.lables = []
         self.GenerateInfoDataWithTest()
@@ -67,10 +67,15 @@ class KFold:
         self.LLR = np.array([])
         pass
 
-    def LoadData(self):
+    def LoadData(self, slice, start):
         self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
                                   + "/Train.txt",
                                   delimiter=",")
+        if slice != None and start == None:
+            self.data = np.concatenate((self.data[:, :slice], self.data[:, -1:]), axis=1)
+        elif slice != None and start != None:
+            end = start + slice
+            self.data = np.concatenate((self.data[:, start:end], self.data[:, -1:]), axis=1)
         # Data has been shuffled before splitting, so
         # that the data of different folds are homogeneous
         dataPandas = pd.DataFrame(self.data)
@@ -118,10 +123,12 @@ class KFold:
     def CheckAccuracy(self):
         self.Accoracy = sum(self.scoreList) / len(self.lables)
 
-    def ValidatClassfier(self, classfierName, threshold=None):
+    def ValidatClassfier(self, classfierName, threshold=None, fold_number=None):
+        if fold_number != None:
+            self.lables = self.infoSet[fold_number].testlable
         if threshold:
             self.realScore = self.binaryOptimalBayesDecision(None)
-            self.scoreList = (self.lables == self.binaryOptimalBayesDecision(None))
+            self.scoreList = self.checkscore(self.realScore)
         self.CheckAccuracy()
         self.CalculateErrorRate()
         self.binaryBayesRisk()
@@ -129,6 +136,9 @@ class KFold:
                 self.err * 100) + 'DCF ' + str(self.DCF) + ' normal DCF ' + str(self.normalDCF))
         minDFC = self.binaryMinDCF()
         print("Min normalize DCF " + str(minDFC))
+
+    def checkscore(self, new_score):
+        return self.lables == new_score
 
     def binaryBayesRisk(self):
         self.CalculateConfusionMatrices()
@@ -141,7 +151,7 @@ class KFold:
         normalizeDCFs = []
         for i in self.LLR:
             self.realScore = self.binaryOptimalBayesDecision(i)
-            self.scoreList = (self.lables == self.binaryOptimalBayesDecision(i))
+            self.scoreList = self.checkscore(self.binaryOptimalBayesDecision(i))
             self.binaryBayesRisk()
             normalizeDCFs.append(self.normalDCF)
         # print(normalizeDCFs)
@@ -153,6 +163,7 @@ class KFold:
 
     def CalculateConfusionMatrices(self):
         i = 0
+        # print(len(self.scoreList))
         for correctPredication in self.scoreList:
             actual_label = int(self.lables[i])
             correctPredication = int(correctPredication)  # class 0,1
@@ -163,6 +174,7 @@ class KFold:
             else:
                 self.ConfusionMatrices[1][actual_label] += 1
             i += 1
+            # print(i)
 
     def CalculateFNR(self):
         self.FNR = self.ConfusionMatrices[0, 1] / (self.ConfusionMatrices[0, 1] + self.ConfusionMatrices[1, 1])

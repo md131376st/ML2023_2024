@@ -18,10 +18,13 @@ class TNB(TCG):
 
 
 if __name__ == "__main__":
-    KFold = KFold(10,prior= 0.5,pca=0)
-    for i in range(KFold.k):
-        TiedNaiveBayes = TNB(KFold.infoSet[i])
+    pca_list = [2, 3, 4, 5]
+    for pca in pca_list:
+        KFold_ = KFold(5, prior=0.5, pca=pca)
+
+    # for i in range(KFold.k):
+        TiedNaiveBayes = TNB(KFold_.infoSet[0])
         TiedNaiveBayes.applyTest()
-        KFold.addscoreList(TiedNaiveBayes.checkAcc())
-        KFold.addLLR(TiedNaiveBayes.foldLLR)
-    KFold.ValidatClassfier("TCG")
+        KFold_.addscoreList(TiedNaiveBayes.checkAcc())
+        KFold_.addLLR(TiedNaiveBayes.foldLLR)
+        KFold_.ValidatClassfier("Tied Naive Bayes Gaussian", fold_number=0)

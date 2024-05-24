@@ -13,7 +13,7 @@ class PCA:
         self.egin_vector = []
         self.mean = 0
         self.conversion = 0
-        if data!=None:
+        if data is not None:
             self.label = data[:, -1].T
             self.data = data[:, :-1].T
         else:
@@ -27,7 +27,7 @@ class PCA:
         # self.PlotFunction()
 
     def LoadData(self):
-        self.data = np.genfromtxt( "./Train.txt",delimiter=",")
+        self.data = np.genfromtxt("./Train.txt", delimiter=",")
         # print(self.data.shape)
         # self.data = np.random.rand(self.data.shape[0]).argsort()
         self.label = self.data[:, -1].T
@@ -56,13 +56,12 @@ class PCA:
         genuine = self.projection_list[:, self.label == 1]
         for i in range(6):
             plt.figure(figsize=(8, 6))
-            plt.hist(fake[i,:], bins=30, alpha=0.5, label=f'fake')
-            plt.hist(genuine[i,:], bins=30, alpha=0.5, label=f'genuine')
+            plt.hist(fake[i, :], bins=30, alpha=0.5, label=f'fake')
+            plt.hist(genuine[i, :], bins=30, alpha=0.5, label=f'genuine')
             plt.title(f'Histogram of PCA Component {i + 1}')
             plt.xlabel('Projected Feature Value')
             plt.ylabel('Frequency')
             plt.legend()
-            plt.savefig("pca_" + str(i+1) + ".png")
+            plt.savefig("pca_" + str(i + 1) + ".png")
 
-
-pca = PCA(m=6)
+# pca = PCA(m=6)
