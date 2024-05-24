@@ -28,7 +28,7 @@ class PCA:
 
     def LoadData(self):
         self.data = np.genfromtxt( "./Train.txt",delimiter=",")
-        print(self.data.shape)
+        # print(self.data.shape)
         # self.data = np.random.rand(self.data.shape[0]).argsort()
         self.label = self.data[:, -1].T
         self.data = self.data[:, :-1].T

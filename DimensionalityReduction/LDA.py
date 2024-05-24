@@ -2,9 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.linalg
 
+from DimensionalityReduction.PCA import PCA
+
 
 class LDA:
-    def __init__(self, m, test_size=0.2, random_state=None):
+    def __init__(self, m, test_size=0.2, random_state=None, data=None, labels=None):
         self.m = m
         self.test_size = test_size
         self.random_state = random_state
@@ -20,8 +22,11 @@ class LDA:
         self.eachClassMean = None
         self.sb = None
         self.sw = None
-
-        self.LoadData()
+        if not data.any():
+            self.LoadData()
+        else:
+            self.data = data
+            self.labels = labels
         self.SplitData()
         self.NumberOfClassSample()
         self.SumAllDataValues = np.sum(self.SampleSizeDiffClass)
@@ -31,10 +36,11 @@ class LDA:
         self.CalculateSW()
         self.CalculateEigenValueJoinSb()
         self.FixOrientation()
-        self.Threshold = self.CalculateThreshold()
-        self.PlotHistograms()
+        # self.Threshold = self.CalculateThreshold()
+        # self.PlotHistograms()
+        self.Threshold = -0.1
         self.error_rate = self.ComputeErrorRate()
-        print(f"Validation Error Rate: {self.error_rate}")
+        print(f"Validation Threshold {self.Threshold} Error Rate: {self.error_rate}")
 
     def SplitData(self):
         if self.random_state is not None:
@@ -89,13 +95,13 @@ class LDA:
         return error_rate
 
     def PlotHistograms(self):
-        projection_list = np.dot(self.eigenVector.T, self.train_data)
-        fake = projection_list[self.train_labels == 0]
-        genuine = projection_list[self.train_labels == 1]
+        projection_list = np.dot(self.eigenVector.T, self.data)
+        fake = projection_list[:, self.labels == 0].flatten()
+        genuine = projection_list[:, self.labels == 1].flatten()
 
-        plt.hist(fake, bins=20, alpha=0.4, label='fake')
-        plt.hist(genuine, bins=20, alpha=0.4, label='genuine')
-        # plt.axvline(x=self.Threshold, color='r', linestyle='--', label='Threshold')
+        plt.hist(fake, bins=30, alpha=0.5, label='fake', color='blue')
+        plt.hist(genuine, bins=30, alpha=0.5, label='genuine', color='green')
+        plt.axvline(x=self.Threshold, color='red', linestyle='--', label='Threshold')
         plt.xlabel('Projected LDA value')
         plt.ylabel('Frequency')
         plt.legend(loc='upper right')
@@ -143,4 +149,18 @@ class LDA:
         return data.mean(axis=1)
 
 
-lda = LDA(1, test_size=0.2, random_state=42)
+# lda = LDA(1, test_size=0.2, random_state=42)
+# threshold_list = [0.1, -0.1, 0.5, -1 , -0.5]
+# for thresh in threshold_list:
+#     lda.Threshold = thresh
+#     error_rate =lda.ComputeErrorRate()
+#     print(f"Validation Threshold {lda.Threshold} Error Rate: {error_rate}")
+
+# pca = PCA(5)
+# lda = LDA(1, test_size=0.2, random_state=42, data=pca.projection_list, labels=pca.label)
+# pca = PCA(4)
+# lda = LDA(1, test_size=0.2, random_state=42, data=pca.projection_list, labels=pca.label)
+# pca = PCA(3)
+# lda = LDA(1, test_size=0.2, random_state=42, data=pca.projection_list, labels=pca.label)
+# pca = PCA(2)
+# lda = LDA(1, test_size=0.2, random_state=42, data=pca.projection_list, labels=pca.label)
