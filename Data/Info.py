@@ -65,6 +65,8 @@ class KFold:
         self.cfn = cfn
         self.cfp = cfp
         self.LLR = np.array([])
+        # self.effective_prior = ((self.pi * self.cfn)/( (self.pi * self.cfn)+((1-self.pi) * self.cfp) ))
+        # print(f"Effective Prior: {self.effective_prior} ")
         pass
 
     def LoadData(self, slice, start):
@@ -132,10 +134,14 @@ class KFold:
         self.CheckAccuracy()
         self.CalculateErrorRate()
         self.binaryBayesRisk()
-        print(classfierName + ':  Error rate %f%%  ' % (
-                self.err * 100) + 'DCF ' + str(self.DCF) + ' normal DCF ' + str(self.normalDCF))
         minDFC = self.binaryMinDCF()
-        print("Min normalize DCF " + str(minDFC))
+        print(classfierName + ':  Error rate %f%%  ' % (
+                self.err * 100) + 'DCF ' + str(self.DCF) + ' normal DCF ' + str(self.normalDCF) + ' Min DCF ' + str(
+            minDFC))
+
+        return self.DCF
+
+        # print("Min normalize DCF " + str(minDFC))
 
     def checkscore(self, new_score):
         return self.lables == new_score
@@ -148,15 +154,16 @@ class KFold:
         self.compute_normalized_DCF()
 
     def binaryMinDCF(self):
-        normalizeDCFs = []
-        for i in self.LLR:
+        thresholds = np.sort(self.LLR)
+        min_DCF = float('inf')
+        for i in thresholds:
             self.realScore = self.binaryOptimalBayesDecision(i)
             self.scoreList = self.checkscore(self.binaryOptimalBayesDecision(i))
             self.binaryBayesRisk()
-            normalizeDCFs.append(self.normalDCF)
+            min_DCF = min(min_DCF, self.normalDCF)
         # print(normalizeDCFs)
-        min_normalizeDCF = reduce(lambda a, b: min(a, b), normalizeDCFs)
-        return min_normalizeDCF
+
+        return min_DCF
 
     def CalculateErrorRate(self):
         self.err = 1 - self.Accoracy
@@ -191,4 +198,4 @@ class KFold:
         self.DCF = self.pi * self.cfn * self.FNR + (1 - self.pi) * self.cfp * self.FPR
         pass
 
-    # def compute_min_DCF(self):
+

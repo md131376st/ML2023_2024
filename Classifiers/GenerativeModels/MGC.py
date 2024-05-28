@@ -31,9 +31,6 @@ class MGC(AlgorithmBasic):
                 c = self.cov_classes[int(j)]
                 score[int(j), :] = self.logpdf_GAU_ND_1sample(xt, mu, c) + np.log(self.prior)
             self.score[:, i:i + 1] = score
-        # we assume are prior probability is 1/2
-        # self.Sjoin = self.prior * self.score
-        # self.logSJoint = np.log(self.score) + np.log(self.prior)
         self.logSMarginal = ss.logsumexp(self.score, axis=0).reshape(1, -1)
         log_SPost = self.score - self.logSMarginal
         self.SPost = np.exp(log_SPost)
@@ -60,16 +57,51 @@ class MGC(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    pca_list = [2, 3, 4, 5]
+    pca_list = [0, 2, 3, 4, 5]
+    dcf = []
     for pca in pca_list:
-        KFold_ = KFold(5, prior=0.5, pca=pca)
+        KFold_ = KFold(5, prior=0.5, cfn=1, cfp=1, pca=pca)
         # for i in range(KFold.k):
         MGC_ = MGC(KFold_.infoSet[0], KFold_.pi)
         MGC_.applyTest()
         KFold_.addscoreList(MGC_.checkAcc())
         KFold_.addLLR(MGC_.foldLLR)
-        KFold_.ValidatClassfier("MVG", fold_number=0)
-
+        dcf.append(KFold_.ValidatClassfier(f"MVG prior:0.5  cfn:1, cfp:1 pca:{pca} ", fold_number=0))
+    for pca in pca_list:
+        KFold_ = KFold(5, prior=0.9, cfn=1, cfp=1, pca=pca)
+        # for i in range(KFold.k):
+        MGC_ = MGC(KFold_.infoSet[0], KFold_.pi)
+        MGC_.applyTest()
+        KFold_.addscoreList(MGC_.checkAcc())
+        KFold_.addLLR(MGC_.foldLLR)
+        dcf.append(KFold_.ValidatClassfier(f"MVG prior:0.9  cfn:1, cfp:1 pca:{pca}", fold_number=0))
+    for pca in pca_list:
+        KFold_ = KFold(5, prior=0.1, cfn=1, cfp=1, pca=pca)
+        # for i in range(KFold.k):
+        MGC_ = MGC(KFold_.infoSet[0], KFold_.pi)
+        MGC_.applyTest()
+        KFold_.addscoreList(MGC_.checkAcc())
+        KFold_.addLLR(MGC_.foldLLR)
+        dcf.append(KFold_.ValidatClassfier(f"MVG prior:0.1  cfn:1, cfp:1 pca:{pca}", fold_number=0))
+    print("Min DCF " + str(min(dcf)))
+    # for pca in pca_list:
+    #     KFold_ = KFold(5, prior=0.5, cfn=1, cfp=9, pca=pca)
+    #     # for i in range(KFold.k):
+    #     MGC_ = MGC(KFold_.infoSet[0], KFold_.pi)
+    #     MGC_.applyTest()
+    #     KFold_.addscoreList(MGC_.checkAcc())
+    #     KFold_.addLLR(MGC_.foldLLR)
+    #     dcf.append(KFold_.ValidatClassfier(f"MVG prior:0.5  cfn:1, cfp:9 pca:{pca}", fold_number=0))
+    #
+    # for pca in pca_list:
+    #     KFold_ = KFold(5, prior=0.5, cfn=9, cfp=1, pca=pca)
+    #     # for i in range(KFold.k):
+    #     MGC_ = MGC(KFold_.infoSet[0], KFold_.pi)
+    #     MGC_.applyTest()
+    #     KFold_.addscoreList(MGC_.checkAcc())
+    #     KFold_.addLLR(MGC_.foldLLR)
+    #     dcf.append(KFold_.ValidatClassfier(f"MVG prior:0.5  cfn:9, cfp:1 pca:{pca}", fold_number=0))
+    # print("Min normalize DCF " + str(min(dcf)))
 
     # KFold = KFold(10,prior= 0.9,pca=11)
     # for i in range(KFold.k):

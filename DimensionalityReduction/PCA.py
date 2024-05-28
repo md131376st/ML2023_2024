@@ -47,8 +47,8 @@ class PCA:
         sumAllEgineVectors = sum(sum(abs(self.egin_vector)))
         self.egin_vector = self.egin_vector[:, 0:self.m]
         sumSelectedEginVector = sum(sum(abs(self.egin_vector)))
-        print("preserve Data Perservation wih " + str(self.m) + " : " +
-              str((sumSelectedEginVector / sumAllEgineVectors) * 100))
+        # print("preserve Data Perservation wih " + str(self.m) + " : " +
+        #       str((sumSelectedEginVector / sumAllEgineVectors) * 100))
         self.projection_list = np.dot(self.egin_vector.T, self.data)
 
     def PlotFunction(self):
