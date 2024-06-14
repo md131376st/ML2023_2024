@@ -134,12 +134,13 @@ class KFold:
         self.CheckAccuracy()
         self.CalculateErrorRate()
         self.binaryBayesRisk()
+        normaldcf=self.normalDCF
         minDFC = self.binaryMinDCF()
         print(classfierName + ':  Error rate %f%%  ' % (
                 self.err * 100) + 'DCF ' + str(self.DCF) + ' normal DCF ' + str(self.normalDCF) + ' Min DCF ' + str(
             minDFC))
 
-        return self.DCF
+        return normaldcf, minDFC
 
         # print("Min normalize DCF " + str(minDFC))
 
@@ -154,7 +155,7 @@ class KFold:
         self.compute_normalized_DCF()
 
     def binaryMinDCF(self):
-        thresholds = np.sort(self.LLR)
+        thresholds = np.concatenate([np.array([-np.inf]), np.argsort(self.LLR), np.array([np.inf])])
         min_DCF = float('inf')
         for i in thresholds:
             self.realScore = self.binaryOptimalBayesDecision(i)
