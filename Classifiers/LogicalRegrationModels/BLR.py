@@ -1,13 +1,23 @@
 import numpy as np
 import scipy.optimize
 import scipy.special
+from matplotlib import pyplot as plt
+
 from Classifiers.algorithemsBasic import AlgorithmBasic
 from Data.Info import KFold
 
-
+def vrow(x):
+    return x.reshape((1, x.size))
 # Binary logistic regression
 class BLR(AlgorithmBasic):
-    def __init__(self, info, l, pi_T=0.5):
+    def __init__(self, info, l, pi_T=None, slice=50):
+        # if slice:
+        #     info.data = info.data[:, ::50]
+        #     info.label = info.label[::50]
+        #     info.test = info.test[:, ::50]
+        #     info.testData = info.testData[:, ::50]
+        #     info.testlable = info.testlable[::50]
+
         super().__init__(info)
         self.l = l
         self.D = info.data.shape[0]  # dimensionality of features space
@@ -16,26 +26,27 @@ class BLR(AlgorithmBasic):
         self.pi_T = pi_T
         self.score = None
         self.llr = None
-        self.points, self.minvalue, self.d = scipy.optimize.fmin_l_bfgs_b(
-            func=self.logreg_obj,
-            x0=np.zeros(
-                self.info.testData.shape[0] + 1),
-            approx_grad=False,
-            iprint=0
-        )
+        if pi_T==None:
+            self.points = scipy.optimize.fmin_l_bfgs_b(
+                func=self.logreg_obj,
+                x0=np.zeros(
+                    self.info.testData.shape[0] + 1)
+            )[0]
+        else:
+            self.points = scipy.optimize.fmin_l_bfgs_b(
+                func=self.logreg_obj_weight,
+                x0=np.zeros(
+                    self.info.testData.shape[0] + 1)
+            )[0]
 
         # print('Number of iterations: %s' % (self.d['funcalls']))
 
         pass
 
     def applyTest(self):
-        w, b = self.points[0:-1], self.points[-1]
-        testSize = self.info.testData.shape[1]
-        self.score = np.zeros(testSize)
-        for i in range(testSize):
-            xi = self.info.testData[:, i:i + 1]
-            s = np.dot(w.T, xi) + b
-            self.score[i] = s
+        w, b = self.points[:-1], self.points[-1]
+        self.score = np.dot(w.T, self.info.testData) + b
+
 
         self.adjust_scores_to_llr()
 
@@ -47,8 +58,21 @@ class BLR(AlgorithmBasic):
         pass
 
     def adjust_scores_to_llr(self):
+        if self.pi_T==None:
+            self.pi_T = (self.info.label==1.0).sum()/self.N
+
         prior_log_odds = np.log(self.pi_T / (1 - self.pi_T))
         self.llr = self.score - prior_log_odds
+
+    def compute_prior_weighted_log_likelihood(self, zi, linear_combination):
+
+        pi_pos = self.pi_T
+        pi_neg = 1 - self.pi_T
+
+        log_likelihood_pos = pi_pos * np.logaddexp(0, -zi * linear_combination)
+        log_likelihood_neg = pi_neg * np.logaddexp(0, zi * linear_combination)
+
+        return log_likelihood_pos + log_likelihood_neg
 
     def __compute_zi(self, ci):
         return 2 * ci - 1
@@ -66,30 +90,45 @@ class BLR(AlgorithmBasic):
             T[:, i] = t
         return T
 
-    def logreg_obj(self, v):
-        # w, b = v[0:-1], v[-1]
-        # J = self.l / 2 * (np.linalg.norm(w) ** 2)
-        # summary = 0
-        # for i in range(self.info.testData.shape[1]):
-        #     xi = self.info.testData[:, i:i + 1]
-        #     ci = self.info.testlable[i]
-        #     zi = self.__compute_zi(ci)
-        #     summary += np.logaddexp(0, -zi * (np.dot(w.T, xi) + b))
-        # J += (1 / self.info.testData.shape[1]) * summary
+    def logreg_obj_weight(self, v):
         w, b = v[:-1], v[-1]
-        xi = self.info.testData
-        ci = self.info.testlable
+        xi = self.info.data
+        ci = self.info.label
         zi = 2 * ci - 1
+        n_T = np.sum(ci == 1)
+        n_F = np.sum(ci == 0)
+        xi_weights = np.where(ci == 1, self.pi_T / n_T, (1 - self.pi_T) / n_F)
         linear_combination = np.dot(w.T, xi) + b  # Shape: (N,)
         log_likelihood = np.logaddexp(0, -zi * linear_combination)  # Shape: (N,)
 
-        # Compute the objective function value
-        J = self.l / 2 * (np.linalg.norm(w) ** 2) + np.mean(log_likelihood)
-
         # Compute the gradient
-        sigmoid = scipy.special.expit(-zi * linear_combination)  # Shape: (N,)
-        gradient_w = -np.mean((sigmoid * zi) * xi, axis=1) + self.l * w  # Shape: (D,)
-        gradient_b = -np.mean(sigmoid * zi)  # Shape: scalar
+        sigmoid = -zi / (1.0 + np.exp(zi * linear_combination))*xi_weights # Shape: (N,)
+        J = self.l / 2 * (np.linalg.norm(w) ** 2) + np.sum(xi_weights * log_likelihood)
+
+        gradient_w = (vrow(sigmoid) * xi).sum(1) + self.l * w.ravel()
+
+        gradient_b = sigmoid.sum()  # Shape: scalar
+        gradient = np.append(gradient_w, gradient_b)  # Shape: (D+1,)
+
+        return J, gradient
+    def logreg_obj(self, v):
+        w, b = v[:-1], v[-1]
+        xi = self.info.data
+        ci = self.info.label
+        zi = 2 * ci - 1
+        linear_combination = np.dot(w.T, xi) + b  # Shape: (N,)
+        log_likelihood = np.logaddexp(0, -zi * linear_combination)  # Shape: (N,)
+        # Compute the gradient
+        sigmoid = -zi/(1.0+np.exp( zi* linear_combination))  # Shape: (N,)
+        J = self.l / 2 * (np.linalg.norm(w) ** 2) + np.mean(log_likelihood)
+        gradient_w = (vrow(sigmoid) *xi).mean(1) + self.l * w.ravel()
+
+        gradient_b = sigmoid.mean() # Shape: scalar
+
+
+
+        # gradient_w = self.l * w + np.sum((xi_weights * sigmoid * zi)[:, np.newaxis] * xi.T, axis=0)  # Shape: (D,)
+        # gradient_b = np.sum(xi_weights * sigmoid * zi)  # Shape: scalar
 
         gradient = np.append(gradient_w, gradient_b)  # Shape: (D+1,)
 
@@ -98,14 +137,29 @@ class BLR(AlgorithmBasic):
 
 if __name__ == "__main__":
     errorRate = []
-    lambdaList = [10 ** -6, 10 ** -3, 10 ** -1, 0, 1, 10]
+    lambdaList = np.logspace(-4, 2, 13)
+    # lambdaList = [1e-3, 1e-1, 1.0]
+    DCFs = []
+    min_DCFs = []
     for j in range(len(lambdaList)):
-        KFold_ = KFold(5, prior=0.5, pca=0)
+        KFold_ = KFold(3, prior=0.1, pca=0)
         # for i in range(KFold_.k):
         # print("fold Number:" + str(i))
-        logRegObj = BLR(KFold_.infoSet[0], lambdaList[j])
+        logRegObj = BLR(KFold_.infoSet[2], lambdaList[j])
         logRegObj.applyTest()
         KFold_.addscoreList(logRegObj.checkAcc())
         KFold_.addLLR(logRegObj.llr)
-        KFold_.ValidatClassfier("BLR with lambda=" + str(lambdaList[j]) + '', fold_number=0)
+        DCF, min_DCF = KFold_.ValidatClassfier("BLR with lambda=" + str(lambdaList[j]) + '', fold_number=2, threshold=0.5)
+        DCFs.append(DCF)
+        min_DCFs.append(min_DCF)
         errorRate.append(KFold_.err)
+    plt.figure(figsize=(10, 7))
+    plt.xscale("log", base=10)
+    plt.plot(lambdaList, DCFs, label=f'DCF')
+    plt.plot(lambdaList, min_DCFs, '--', label=f'Min DCF')
+    plt.xlabel('$\lambda$')
+    plt.ylabel('Detection Cost Function (DCF)')
+    plt.title('DCF vs $\lambda$')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

@@ -1,9 +1,9 @@
 import numpy as np
-from algorithemsBasic import AlgorithmBasic
-from Info import KFold
+
+from Classifiers.algorithemsBasic import AlgorithmBasic
+from Data.Info import KFold
 import scipy.optimize
 import scipy.special
-
 
 
 # Linear Support vector machines
@@ -41,17 +41,14 @@ class LSVM(AlgorithmBasic):
         self.b = self.wc_star[-1]
         self.S = np.dot(self.w.T, self.info.testData) + self.b * self.K
         self.primal_loss = self.primal_obj()
-        self.dual_loss = self.LDc_obj(self.m)[0]
-        self.duality_gap = self.primal_obj() + self.dual_loss
+        self.dual_loss = -self.LDc_obj(self.m)[0]
+        self.duality_gap = self.primal_obj() - self.dual_loss
 
         pass
 
     def primal_obj(self):
         return 0.5 * np.linalg.norm(self.wc_star) ** 2 + self.C * np.sum(
             np.maximum(0, 1 - self.DataLabelZ * np.dot(self.wc_star.T, self.spaceD)))
-
-    def duality_gap(self, alpha_star):
-        return self.primal_obj() + self.LDc_obj(alpha_star)[0]
 
     def checkAcc(self):
         predict_labels = np.where(self.S > 0, 1, 0)
@@ -60,26 +57,23 @@ class LSVM(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    KFold = KFold(3)
+
     listC = [0.1, 1, 10]
     listK = [1, 10]
     for c in listC:
         for k in listK:
-            listScore=[]
-            for i in range(KFold.k):
-                LinearSVM = LSVM(KFold.infoSet[i], c, k)
-                LinearSVM.applyTest()
-                print('Primal loss: %f,Dual loss: %f, Duality gap: %.9f' % (
-                    LinearSVM.primal_loss, LinearSVM.dual_loss, LinearSVM.duality_gap))
-                KFold.addscoreList(LinearSVM.checkAcc())
-                listScore=np.concatenate(( listScore,LinearSVM.C))
-            KFold.ValidatClassfier('LinerSVM C=%.1f, K=%d' % (
-                c, k))
-            np.savetxt("LinerSVM"+ str(c)+"_k"+str(k)+".txt",listScore )
-            KFold.scoreList = []
+            KFold_ = KFold(3, prior=0.5, pca=0)
+            LinearSVM = LSVM(KFold_.infoSet[2], c, k)
+            LinearSVM.applyTest()
+            print('Primal loss: %f,Dual loss: %f, Duality gap: %.9f' % (
+                LinearSVM.primal_loss, LinearSVM.dual_loss, LinearSVM.duality_gap))
+            KFold_.addscoreList(LinearSVM.checkAcc())
+            KFold_.addLLR(LinearSVM.S)
+            # listScore = np.concatenate((listScore, LinearSVM.C))
+            KFold_.ValidatClassfier('LinerSVM C=%.1f, K=%d' % (
+                c, k), fold_number=2, threshold=0)
+            # np.savetxt("LinerSVM" + str(c) + "_k" + str(k) + ".txt", listScore)
+            # KFold.scoreList = []
             # calibration
-            for i in range(KFold.k):
-                pass
-
-
-
+            # for i in range(KFold.k):
+            #     pass
