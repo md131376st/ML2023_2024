@@ -74,23 +74,23 @@ class KFold:
         pass
 
     def LoadData(self, slice, start):
-        self.test_iris()
-        # self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
-        #                           + "/Train.txt",
-        #                           delimiter=",")
-        # if slice != None and start == None:
-        #     self.data = np.concatenate((self.data[:, :slice], self.data[:, -1:]), axis=1)
-        # elif slice != None and start != None:
-        #     end = start + slice
-        #     self.data = np.concatenate((self.data[:, start:end], self.data[:, -1:]), axis=1)
-        # # Data has been shuffled before splitting, so
-        # # that the data of different folds are homogeneous
-        # dataPandas = pd.DataFrame(self.data)
-        # dataPandas = dataPandas.sample(
-        #     frac=1,
-        #     random_state=100,
-        # ).reset_index(drop=True)
-        # self.data = dataPandas.to_numpy()
+        # self.test_iris()
+        self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
+                                  + "/Train.txt",
+                                  delimiter=",")
+        if slice != None and start == None:
+            self.data = np.concatenate((self.data[:, :slice], self.data[:, -1:]), axis=1)
+        elif slice != None and start != None:
+            end = start + slice
+            self.data = np.concatenate((self.data[:, start:end], self.data[:, -1:]), axis=1)
+        # Data has been shuffled before splitting, so
+        # that the data of different folds are homogeneous
+        dataPandas = pd.DataFrame(self.data)
+        dataPandas = dataPandas.sample(
+            frac=1,
+            random_state=100,
+        ).reset_index(drop=True)
+        self.data = dataPandas.to_numpy()
 
         if self.pca != 0:
             self.data = np.hstack(
