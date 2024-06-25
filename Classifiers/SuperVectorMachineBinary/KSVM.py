@@ -4,6 +4,7 @@ from Classifiers.algorithemsBasic import AlgorithmBasic
 from Data.Info import KFold
 import scipy.optimize
 import scipy.special
+from matplotlib import pyplot as plt
 
 
 def vcol(x):
@@ -41,7 +42,7 @@ class KSVM(AlgorithmBasic):
                                                     x0=np.zeros(self.N),
                                                     factr=1.0)
         self.wc_star = np.sum(self.m * self.DataLabelZ * self.spaceD, axis=1)
-        print('SVM (kernel) - C %e - dual loss %e' % (self.C, -self.LDc_obj(self.m)[0]))
+        # print('SVM (kernel) - C %e - dual loss %e' % (self.C, -self.LDc_obj(self.m)[0]))
 
         # return kernel + eps
 
@@ -89,32 +90,71 @@ class KSVM(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    # listeps = [0, 1]
-    # listGama = [1, 10]
-    # listC = [1]
+    DCFs = []
+    min_DCFs = []
+    list_eps = [0]
+    exponents = [-4, -3, -2, -1]
+    list_gamma = [np.exp(e) for e in exponents]
+    list_C = np.logspace(-3, 2, 11)
+
+    for eps in list_eps:
+        for gamma in list_gamma:
+            DCF_gamma = []
+            min_DCF_gamma = []
+            for c in list_C:
+                KFold_ = KFold(5, prior=0.1, pca=0)
+                LinearSVM = KSVM(KFold_.infoSet[0], 'RBF', eps, c, eps, gamma)
+                LinearSVM.applyTest()
+                KFold_.addscoreList(LinearSVM.checkAcc())
+                KFold_.addLLR(LinearSVM.S)
+                DCF, min_DCF = KFold_.ValidatClassfier('KernelSVM RBF  C=%.5f, K=0, eps=0, gamma=%f ' % (
+                    c, gamma), fold_number=0, threshold=0.5)  # Assuming evaluate returns DCF and min DCF
+                DCF_gamma.append(DCF)
+                min_DCF_gamma.append(min_DCF)
+            DCFs.append(DCF_gamma)
+            min_DCFs.append(min_DCF_gamma)
+
+    plt.figure(figsize=(10, 7))
+    plt.xscale("log", base=10)
+    for i, gamma in enumerate(list_gamma):
+        plt.plot(list_C, DCFs[i], label=f'DCF (gamma={gamma})')
+        plt.plot(list_C, min_DCFs[i], '--', label=f'Min DCF (gamma={gamma})')
+
+    plt.xlabel('C')
+    plt.ylabel('Detection Cost Function (DCF)')
+    plt.title('DCF vs C for different values of gamma')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    # np.savetxt("kernelRunRBF"+ str(c)+"_eps"+str(eps)+"_gamma"+str(gamma)+".txt",listScore )
+    # DCFs = []
+    # min_DCFs = []
+    # listeps = [0]
+    # d = [2]
+    # clist = [1]
+    # listC = np.logspace(-5, 0, 11)
     # for eps in listeps:
     #     for c in listC:
-    #         for gamma in listGama:
-    #             KFold_ = KFold(3, prior=0.5, pca=0)
-    #             LinearSVM = KSVM(KFold_.infoSet[2], 'RBF', eps, c, eps, gamma)
-    #             LinearSVM.applyTest()
-    #             KFold_.addscoreList(LinearSVM.checkAcc())
-    #             KFold_.addLLR(LinearSVM.S)
-    #             KFold_.ValidatClassfier('KernelSVM RBF  C=%.1f, K=%f, eps=%f, gamma=%f ' % (
-    #                 c, eps, eps, gamma), fold_number=2, threshold=0)
-    # np.savetxt("kernelRunRBF"+ str(c)+"_eps"+str(eps)+"_gamma"+str(gamma)+".txt",listScore )
-    listeps = [0, 1]
-    d = [2]
-    clist = [0, 1]
-    listC = [1]
-    for eps in listeps:
-        for c in listC:
-            for d_ in d:
-                for c_ in clist:
-                    KFold_ = KFold(3, prior=0.5, pca=0)
-                    LinearSVM = KSVM(KFold_.infoSet[2], 'Polynomial', eps, c, eps, c_, d_)
-                    LinearSVM.applyTest()
-                    KFold_.addscoreList(LinearSVM.checkAcc())
-                    KFold_.addLLR(LinearSVM.S)
-                    KFold_.ValidatClassfier('KernelSVM Polynomial  C=%.1f, K=%f, eps=%f, c=%f ,d=%f' % (
-                        c, eps, eps, c_, d_), fold_number=2, threshold=0)
+    #         for d_ in d:
+    #             for c_ in clist:
+    #                 KFold_ = KFold(5, prior=0.1, pca=0)
+    #                 LinearSVM = KSVM(KFold_.infoSet[0], 'Polynomial', eps, c, eps, c_, d_)
+    #                 LinearSVM.applyTest()
+    #                 KFold_.addscoreList(LinearSVM.checkAcc())
+    #                 KFold_.addLLR(LinearSVM.S)
+    #                 DCF, min_DCF = KFold_.ValidatClassfier('KernelSVM Polynomial  C=%.5f, K=%.1f, eps=%.1f, c=%.1f ,d=%.1f' % (
+    #                     c, eps, eps, c_, d_), fold_number=0, threshold=0.5)
+    #                 DCFs.append(DCF)
+    #                 min_DCFs.append(min_DCF)
+
+    plt.figure(figsize=(10, 7))
+    plt.xscale("log", base=10)
+    for i, gamma in enumerate(list_gamma):
+        plt.plot(list_C, DCFs[i], label=f'DCF (gamma={gamma})')
+        plt.plot(list_C, min_DCFs[i], '--', label=f'Min DCF (gamma={gamma})')
+    plt.xlabel('C')
+    plt.ylabel('Detection Cost Function (DCF)')
+    plt.title('DCF vs C')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
