@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 from Classifiers.algorithemsBasic import AlgorithmBasic
 from Data.Info import KFold
@@ -6,10 +7,27 @@ import scipy.optimize
 import scipy.special
 
 
+def center_data(data, test):
+    mean = np.mean(data, axis=1, keepdims=True)
+    centered_data = data - mean
+    centered_test = test - mean
+    return centered_data, centered_test
+
+
+def z_normalize_fuc(data, test):
+    mean = np.mean(data, axis=1, keepdims=True)
+    std = np.std(data, axis=1, keepdims=True)
+    z_normalized_data = (data - mean) / std
+    z_normalized_test = (test - mean) / std
+    return z_normalized_data, z_normalized_test
+
+
 # Linear Support vector machines
 class LSVM(AlgorithmBasic):
-    def __init__(self, info, C, k):
+    def __init__(self, info, C, k ,center=False):
         super().__init__(info)
+        if center:
+            self.info.data, self.info.testData = center_data(self.info.data, self.info.testData)
         self.N = info.data.shape[1]
         self.K = k
         self.C = C
@@ -57,23 +75,33 @@ class LSVM(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-
-    listC = [0.1, 1, 10]
-    listK = [1, 10]
+    DCFs = []
+    min_DCFs = []
+    listC = np.logspace(-5, 0, 11)
+    listK = [1]
     for c in listC:
         for k in listK:
-            KFold_ = KFold(3, prior=0.5, pca=0)
-            LinearSVM = LSVM(KFold_.infoSet[2], c, k)
+            KFold_ = KFold(5, prior=0.1, pca=0)
+            LinearSVM = LSVM(KFold_.infoSet[0], c, k , center=True)
             LinearSVM.applyTest()
-            print('Primal loss: %f,Dual loss: %f, Duality gap: %.9f' % (
-                LinearSVM.primal_loss, LinearSVM.dual_loss, LinearSVM.duality_gap))
+            # print('Primal loss: %f,Dual loss: %f, Duality gap: %.9f' % (
+            #     LinearSVM.primal_loss, LinearSVM.dual_loss, LinearSVM.duality_gap))
             KFold_.addscoreList(LinearSVM.checkAcc())
             KFold_.addLLR(LinearSVM.S)
             # listScore = np.concatenate((listScore, LinearSVM.C))
-            KFold_.ValidatClassfier('LinerSVM C=%.1f, K=%d' % (
-                c, k), fold_number=2, threshold=0)
-            # np.savetxt("LinerSVM" + str(c) + "_k" + str(k) + ".txt", listScore)
-            # KFold.scoreList = []
-            # calibration
-            # for i in range(KFold.k):
-            #     pass
+            DCF, min_DCF = KFold_.ValidatClassfier('Centralized LinerSVM  C=%.5f, K=1' % (
+                c), fold_number=0, threshold=0.5)
+
+            DCFs.append(DCF)
+            min_DCFs.append(min_DCF)
+
+    plt.figure(figsize=(10, 7))
+    plt.xscale("log", base=10)
+    plt.plot(listC, DCFs, label=f'DCF')
+    plt.plot(listC, min_DCFs, '--', label=f'Min DCF')
+    plt.xlabel('C')
+    plt.ylabel('Detection Cost Function (DCF)')
+    plt.title('DCF vs C')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

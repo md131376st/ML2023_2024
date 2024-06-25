@@ -159,7 +159,7 @@ class KFold:
         normal_dcf = self.normalDCF
         minDFC = self.binaryMinDCF()
         print(classfierName + ':  Error rate %f%%  ' % (
-                self.err * 100) + 'DCF ' + str(dcf) + ' normal DCF ' + str(normal_dcf) + ' Min DCF ' + str(
+                self.err * 100) + ' Actual DCF ' + str(normal_dcf) + ' Min DCF ' + str(
             minDFC))
 
         return normal_dcf, minDFC
