@@ -28,7 +28,7 @@ class Info:
     def LoadData(self):
         self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__))) + "/Train.txt",
                                   delimiter=",")
-        self.test = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__))) + "/Test.txt", delimiter=",")
+        self.test = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__))) + "/evalData.txt", delimiter=",")
 
     def TransferData(self):
         pass
