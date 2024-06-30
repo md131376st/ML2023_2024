@@ -56,7 +56,6 @@ if __name__ == '__main__':
         , quadratic, quadratic_1, kernel_SVM, kernel_SVM1]
     labels = ['GMM Diagonal with 16 ',
               'GMM Tied with 32',
-
               'Quadratic Regression with lambda =0.0031622776601683794 ',
               'Quadratic Regression with lambda =0.0001',
               'Kernel SVM=RBF  with k=1, y=e^(-2), C=31.622776601683793',
