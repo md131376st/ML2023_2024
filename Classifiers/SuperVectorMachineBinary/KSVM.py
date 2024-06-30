@@ -66,6 +66,7 @@ class KSVM(AlgorithmBasic):
         elif self.kernelType == 'RBF':
             self.RBF(self.params, self.info.data, self.info.testData)
         self.S = np.dot((self.m * self.DataLabelZ).reshape(1, -1), self.kernel).T
+        self.llr = self.S
 
         pass
 

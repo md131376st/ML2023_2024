@@ -6,7 +6,7 @@ from DimensionalityReduction.PCA import PCA
 import pandas as pd
 from functools import reduce
 import scipy.stats
-
+import copy
 def vrow(x):
     return x.reshape((1, x.size))
 class Info:
@@ -14,8 +14,8 @@ class Info:
         if not isKfold:
             self.LoadData()
         else:
-            self.data = data
-            self.test = test
+            self.data = copy.deepcopy(data)
+            self.test = copy.deepcopy(test)
         self.label = self.data[:, -1].T
         self.data = self.data[:, :-1].T
 

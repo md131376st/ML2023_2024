@@ -177,11 +177,11 @@ if __name__ == "__main__":
         KFold_ = KFold(5, prior=0.1, pca=0)
         # for i in range(KFold_.k):
         # print("fold Number:" + str(i))
-        logRegObj = BLR(KFold_.infoSet[0], lambdaList[j])
+        logRegObj = BLR(KFold_.infoSet[0], lambdaList[j], pi_T=0.1)
         logRegObj.applyTest()
         KFold_.addscoreList(logRegObj.checkAcc())
         KFold_.addLLR(logRegObj.llr)
-        DCF, min_DCF = KFold_.ValidatClassfier("quadratic logistic regression  with lambda=" + str(lambdaList[j]) + '',
+        DCF, min_DCF = KFold_.ValidatClassfier("Prior-weighted logistic regression  with lambda=" + str(lambdaList[j]) + '',
                                                fold_number=0, threshold=0.5)
         DCFs.append(DCF)
         min_DCFs.append(min_DCF)
