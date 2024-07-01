@@ -7,8 +7,16 @@ import pandas as pd
 from functools import reduce
 import scipy.stats
 import copy
+
+
 def vrow(x):
     return x.reshape((1, x.size))
+
+
+def vcol(x):
+    return x.reshape((x.size, 1))
+
+
 class Info:
     def __init__(self, data=None, test=None, isKfold=False):
         if not isKfold:
@@ -28,7 +36,8 @@ class Info:
     def LoadData(self):
         self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__))) + "/Train.txt",
                                   delimiter=",")
-        self.test = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__))) + "/evalData.txt", delimiter=",")
+        self.test = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__))) + "/evalData.txt",
+                                  delimiter=",")
 
     def TransferData(self):
         pass
@@ -39,18 +48,14 @@ class Info:
     def CalculateErrorRate(self):
         self.err = 1 - self.Accoracy
 
-    def ValidatClassfier(self, sum_correct_assign, classfierName):
-
-        self.CheckAccuracy(sum_correct_assign)
-        self.CalculateErrorRate()
-        print(classfierName + ':  Error rate %f%%' % (self.err * 100))
 
 
 class KFold:
-    def __init__(self, k, prior=0.5, cfn=1, cfp=1, pca=0, slice=None, start=None):
+    def __init__(self, k, prior=0.5, cfn=1, cfp=1, pca=0, slice=None, start=None, data=None):
         self.k = k
         self.foldList = []
         self.pca = pca
+        self.data = data
         self.LoadData(slice, start)
         self.infoSet = []
         self.lables = []
@@ -75,9 +80,10 @@ class KFold:
 
     def LoadData(self, slice, start):
         # self.test_iris()
-        self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
-                                  + "/Train.txt",
-                                  delimiter=",")
+        if self.data is None:
+            self.data = np.genfromtxt(os.path.join(os.path.dirname(os.path.abspath(__file__)))
+                                      + "/Train.txt",
+                                      delimiter=",")
         if slice != None and start == None:
             self.data = np.concatenate((self.data[:, :slice], self.data[:, -1:]), axis=1)
         elif slice != None and start != None:
@@ -97,7 +103,7 @@ class KFold:
                 (PCA(self.pca, self.data).projection_list.T, self.data[:, -1].reshape(1, self.data.shape[0]).T))
         self.foldsize = int(self.data.shape[0] / self.k)
         for i in range(self.k):
-            if i == self.k -1:
+            if i == self.k - 1:
                 self.foldList.append(self.data[i * self.foldsize:, :])
             else:
                 self.foldList.append(self.data[i * self.foldsize:self.foldsize * (i + 1), :])
@@ -112,7 +118,7 @@ class KFold:
 
         np.random.seed(0)
         idx = np.random.permutation(self.data.shape[1])
-        self.data = self.data[:,idx].T
+        self.data = self.data[:, idx].T
 
     def GenerateInfoDataWithTest(self):
         for i in range(self.k):
@@ -121,7 +127,7 @@ class KFold:
             data = np.zeros(shape=(0, self.data.shape[1]))
             for j in range(i):
                 data = np.concatenate((data, self.foldList[j]))
-            for j in range(i+1, self.k):
+            for j in range(i + 1, self.k):
                 data = np.concatenate((data, self.foldList[j]))
             self.infoSet.append(Info(data, test, True))
 
@@ -211,10 +217,11 @@ class KFold:
                 thresholdsOut.append(llrSorted[idx])
 
         return np.array(PfnOut), np.array(PfpOut), np.array(thresholdsOut)
+
     def binaryMinDCF(self):
         Pfn, Pfp, th = self.compute_Pfn_Pfp_allThresholds_fast()
         minDCF = (self.pi * self.cfn * Pfn + (1 - self.pi) * self.cfp * Pfp) / np.minimum(self.pi * self.cfn, (
-                    1 - self.pi) * self.cfp)
+                1 - self.pi) * self.cfp)
         idx = np.argmin(minDCF)
         # thresholds = np.concatenate([np.array([-np.inf]), self.LLR, np.array([np.inf])])
         # min_DCF = None
