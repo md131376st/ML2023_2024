@@ -23,17 +23,15 @@ def compute_optimal_Bayes(posterior, costMatrix):
     return numpy.argmin(expectedCosts, 0)
 
 
-# Build uniform cost matrix with cost 1 for all kinds of error, and cost 0 for correct assignments
-def uniform_cost_matrix(nClasses):
-    return numpy.ones((nClasses, nClasses)) - numpy.eye(nClasses)
+
 
 
 # Assume that classes are labeled 0, 1, 2 ... (nClasses - 1)
 def compute_confusion_matrix(predictedLabels, classLabels):
-    nClasses = classLabels.max() + 1
+    nClasses = len(set(classLabels))
     M = numpy.zeros((nClasses, nClasses), dtype=numpy.int32)
     for i in range(classLabels.size):
-        M[predictedLabels[i], classLabels[i]] += 1
+        M[int(predictedLabels[i]), int(classLabels[i])] += 1
     return M
 
 
@@ -41,16 +39,6 @@ def compute_confusion_matrix(predictedLabels, classLabels):
 def compute_optimal_Bayes_binary_llr(llr, prior, Cfn, Cfp):
     th = -numpy.log((prior * Cfn) / ((1 - prior) * Cfp))
     return numpy.int32(llr > th)
-
-
-# Multiclass solution that works also for binary problems
-def compute_empirical_Bayes_risk(predictedLabels, classLabels, prior_array, costMatrix, normalize=True):
-    M = compute_confusion_matrix(predictedLabels, classLabels)  # Confusion matrix
-    errorRates = M / vrow(M.sum(0))
-    bayesError = ((errorRates * costMatrix).sum(0) * prior_array.ravel()).sum()
-    if normalize:
-        return bayesError / numpy.min(costMatrix @ vcol(prior_array))
-    return bayesError
 
 
 # Specialized function for binary problems (empirical_Bayes_risk is also called DCF or actDCF)

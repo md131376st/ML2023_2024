@@ -2,6 +2,7 @@ import numpy
 import scipy.special
 from matplotlib import pyplot as plt
 
+from Classifiers import bayesRisk
 from Classifiers.algorithemsBasic import AlgorithmBasic
 from Data.Info import KFold, Info
 
@@ -164,28 +165,50 @@ class GMMEM(AlgorithmBasic):
 
 
 if __name__ == "__main__":
-    componentlist = [ 16]
-    DCFs = []
-    min_DCFs = []
-    for component in componentlist:
-        KFold_ = KFold(5, prior=0.1, pca=0)
-        # GMMEM_ = GMMEM(KFold_.infoSet[0], thresholdForEValues=0.01, numberOfComponents=component)
-        GMMEM_ = GMMEM(KFold_.infoSet[0], thresholdForEValues=0.01, numberOfComponents=component, model="diagonal")
-        GMMEM_.applyTest()
-        KFold_.addscoreList(GMMEM_.checkAcc())
-        KFold_.addLLR(GMMEM_.llr)
-        DCF, min_DCF = KFold_.ValidatClassfier(f"GMM Tied  with component: {component}",
-                                               fold_number=0, threshold=0)
-        DCFs.append(DCF)
-        min_DCFs.append(min_DCF)
+    # componentlist = [1, 2, 4, 8, 16, 32]
+    # DCFs = []
+    # min_DCFs = []
+    # for component in componentlist:
+    #     KFold_ = KFold(5, prior=0.1, pca=0)
+    #     # GMMEM_ = GMMEM(KFold_.infoSet[0], thresholdForEValues=0.01, numberOfComponents=component)
+    #     GMMEM_ = GMMEM(KFold_.infoSet[0], thresholdForEValues=0.01, numberOfComponents=component, model="diagonal")
+    #     GMMEM_.applyTest()
+    #     KFold_.addscoreList(GMMEM_.checkAcc())
+    #     KFold_.addLLR(GMMEM_.llr)
+    #     DCF, min_DCF = KFold_.ValidatClassfier(f"GMM Tied  with component: {component}",
+    #                                            fold_number=0, threshold=0)
+    #     DCFs.append(DCF)
+    #     min_DCFs.append(min_DCF)
+    #
+    # plt.figure(figsize=(10, 7))
+    # plt.plot(componentlist, DCFs, label=f'DCF')
+    # plt.plot(componentlist, min_DCFs, '--', label=f'Min DCF')
+    # plt.xticks(componentlist, componentlist)
+    # plt.xlabel('component')
+    # plt.ylabel('Detection Cost Function (DCF)')
+    # plt.title('DCF vs C')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 
-    plt.figure(figsize=(10, 7))
-    plt.plot(componentlist, DCFs, label=f'DCF')
-    plt.plot(componentlist, min_DCFs, '--', label=f'Min DCF')
-    plt.xticks(componentlist, componentlist)
-    plt.xlabel('component')
-    plt.ylabel('Detection Cost Function (DCF)')
-    plt.title('DCF vs C')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    model_list = ["full", "diagonal", "tied"]
+    componentlist = [1, 2, 4, 8, 16, 32]
+    for model in model_list:
+        for component in componentlist:
+            info = Info()
+            # GMMEM_ = GMMEM(KFold_.infoSet[0], thresholdForEValues=0.01, numberOfComponents=component)
+            GMMEM_ = GMMEM(info, thresholdForEValues=0.01, numberOfComponents=component, model=model)
+            GMMEM_.applyTest()
+
+            print(
+                f'GMMM mode:{model} component:{component}  minDCF - pT = 0.1: %.4f' % bayesRisk.compute_minDCF_binary_fast(
+                    GMMEM_.llr,
+                    info.testlable,
+                    0.1,
+                    1.0, 1.0))
+            # print(
+            #     f'{model} actDCF - pT = 0.1: %.4f' % bayesRisk.compute_actDCF_binary_fast(
+            #         GMMEM_.llr,
+            #         info.testlable,
+            #         0.1,
+            #         1.0, 1.0))

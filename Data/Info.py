@@ -18,12 +18,15 @@ def vcol(x):
 
 
 class Info:
-    def __init__(self, data=None, test=None, isKfold=False):
+    def __init__(self, data=None, test=None, isKfold=False, isFiusion=False):
         if not isKfold:
             self.LoadData()
         else:
             self.data = copy.deepcopy(data)
             self.test = copy.deepcopy(test)
+        if isFiusion:
+            self.test = self.data
+
         self.label = self.data[:, -1].T
         self.data = self.data[:, :-1].T
 
