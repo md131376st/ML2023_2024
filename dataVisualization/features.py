@@ -37,7 +37,7 @@ col = 0
 for f in range(6):
     axs[row, col].hist(fake[f], bins=20, density=True, alpha=0.4)
     axs[row, col].hist(genuine[f], bins=20, density=True, alpha=0.4)
-    XPlot = np.linspace(-35, 35, 2000).reshape(1, -1)  # N=1000 samples of M=1 features -> it is a row vector
+    XPlot = np.linspace(-5, 5, 100).reshape(1, -1)  # N=1000 samples of M=1 features -> it is a row vector
     mu = np.mean(fake[f].reshape(-1, 1)).reshape(-1, 1)
     C = 1 / len(fake[f]) * np.dot(fake[f] - mu, (fake[f] - mu).T)
     y = logpdf_GAU_ND(XPlot, mu, C)
@@ -55,5 +55,5 @@ for f in range(6):
 
 fig.legend(['MGD fake', ',MGD genuine', 'fake', 'genuine']
            )
-
-plt.savefig("fetures.png")
+fig.show()
+# plt.savefig("fetures.png")
