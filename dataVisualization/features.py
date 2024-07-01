@@ -27,35 +27,33 @@ def logpdf_GAU_ND(x, mu, C):
 
 
 L, D = LoadData()
-features_Men = D[:, L == 0]
-features_women = D[:, L == 1]
-nameFeatures = ['Feature-1', 'Feature-2', 'Feature-3', 'Feature-4', 'Feature-5', 'Feature-6', 'Feature-7', 'Feature-8',
-                'Feature-9', 'Feature-10', 'Feature-11', 'Feature-12']
+fake = D[:, L == 0]
+genuine = D[:, L == 1]
+nameFeatures = ['Feature-1', 'Feature-2', 'Feature-3', 'Feature-4', 'Feature-5', 'Feature-6']
 plt.figure()
-fig, axs = plt.subplots(4, 3, layout="constrained")
+fig, axs = plt.subplots(2, 3, layout="constrained")
 row = 0
 col = 0
-for f in range(12):
-    axs[row, col].hist(features_Men[f], bins=20, density=True, alpha=0.4)
-    axs[row, col].hist(features_women[f], bins=20, density=True, alpha=0.4)
+for f in range(6):
+    axs[row, col].hist(fake[f], bins=20, density=True, alpha=0.4)
+    axs[row, col].hist(genuine[f], bins=20, density=True, alpha=0.4)
     XPlot = np.linspace(-35, 35, 2000).reshape(1, -1)  # N=1000 samples of M=1 features -> it is a row vector
-    mu = np.mean(features_Men[f].reshape(-1, 1)).reshape(-1, 1)
-    C = 1 / len(features_Men[f]) * np.dot(features_Men[f] - mu, (features_Men[f] - mu).T)
+    mu = np.mean(fake[f].reshape(-1, 1)).reshape(-1, 1)
+    C = 1 / len(fake[f]) * np.dot(fake[f] - mu, (fake[f] - mu).T)
     y = logpdf_GAU_ND(XPlot, mu, C)
     axs[row, col].plot(XPlot.ravel(), np.exp(y))
 
-    mu = np.mean(features_women[f].reshape(-1, 1)).reshape(-1, 1)
-    C = 1 / len(features_women[f]) * np.dot(features_women[f] - mu, (features_women[f] - mu).T)
+    mu = np.mean(genuine[f].reshape(-1, 1)).reshape(-1, 1)
+    C = 1 / len(genuine[f]) * np.dot(genuine[f] - mu, (genuine[f] - mu).T)
     y = logpdf_GAU_ND(XPlot, mu, C)
     axs[row, col].plot(XPlot.ravel(), np.exp(y))
     axs[row, col].set_title(nameFeatures[f])
-    row +=1
-    if row==4:
-        col+=1
-        row=0
+    row += 1
+    if row == 2:
+        col += 1
+        row = 0
 
-
-fig.legend(['MGD men', ',MGD women', 'men', 'women'],  loc='outside upper right'
-                 )
+fig.legend(['MGD fake', ',MGD genuine', 'fake', 'genuine']
+           )
 
 plt.savefig("fetures.png")
