@@ -27,24 +27,26 @@ def logpdf_GAU_ND(x, mu, C):
 
 
 L, D = LoadData()
-fake = D[:, L == 0]
-genuine = D[:, L == 1]
+features_fake = D[:, L == 0]
+features_genuine = D[:, L == 1]
 nameFeatures = ['Feature-1', 'Feature-2', 'Feature-3', 'Feature-4', 'Feature-5', 'Feature-6']
 plt.figure()
 fig, axs = plt.subplots(2, 3, layout="constrained")
 row = 0
 col = 0
 for f in range(6):
-    axs[row, col].hist(fake[f], bins=20, density=True, alpha=0.4)
-    axs[row, col].hist(genuine[f], bins=20, density=True, alpha=0.4)
-    XPlot = np.linspace(-5, 5, 100).reshape(1, -1)  # N=1000 samples of M=1 features -> it is a row vector
-    mu = np.mean(fake[f].reshape(-1, 1)).reshape(-1, 1)
-    C = 1 / len(fake[f]) * np.dot(fake[f] - mu, (fake[f] - mu).T)
+    axs[row, col].hist(features_fake[f], bins=20, density=True, alpha=0.4)
+    axs[row, col].hist(features_genuine[f], bins=20, density=True, alpha=0.4)
+    XPlot = np.linspace(-5, 5, 2000).reshape(1, -1)  # N=1000 samples of M=1 features -> it is a row vector
+    mu = np.mean(features_fake[f].reshape(-1, 1)).reshape(-1, 1)
+    C = 1 / len(features_fake[f]) * np.dot(features_fake[f] - mu, (features_fake[f] - mu).T)
+    print(f"{nameFeatures[f]} fake mean: {mu}  variance:{C}")
     y = logpdf_GAU_ND(XPlot, mu, C)
     axs[row, col].plot(XPlot.ravel(), np.exp(y))
 
-    mu = np.mean(genuine[f].reshape(-1, 1)).reshape(-1, 1)
-    C = 1 / len(genuine[f]) * np.dot(genuine[f] - mu, (genuine[f] - mu).T)
+    mu = np.mean(features_genuine[f].reshape(-1, 1)).reshape(-1, 1)
+    C = 1 / len(features_genuine[f]) * np.dot(features_genuine[f] - mu, (features_genuine[f] - mu).T)
+    print(f"{nameFeatures[f]} genuine mean: {mu}  variance:{C}")
     y = logpdf_GAU_ND(XPlot, mu, C)
     axs[row, col].plot(XPlot.ravel(), np.exp(y))
     axs[row, col].set_title(nameFeatures[f])
@@ -53,7 +55,31 @@ for f in range(6):
         col += 1
         row = 0
 
-fig.legend(['MGD fake', ',MGD genuine', 'fake', 'genuine']
-           )
-fig.show()
+# fig.legend(['MGD fake', ',MGD genuine', 'fake', 'genuine'], loc="lower left")
+#
 # plt.savefig("fetures.png")
+#
+for f in range(6):
+    plt.figure(figsize=(10, 10))
+    fig, axs = plt.subplots(2, 3)
+    row = 0
+    col = 0
+    for x in range(6):
+        if f == x:
+            row += 1
+            if row == 2:
+                col += 1
+                row = 0
+            continue
+        plt.xlabel(nameFeatures[f])
+        plt.ylabel(nameFeatures[x])
+        axs[row, col].scatter(features_fake[f], features_fake[x], s=1, label='Fake')
+        axs[row, col].scatter(features_genuine[f], features_genuine[x], s=1, label='Genuine')
+        row += 1
+        if row == 2:
+            col += 1
+            row = 0
+
+    fig.legend(['fake', 'genuine'])
+    plt.savefig(f"fetures_{f+1}.png")
+
